@@ -1,0 +1,105 @@
+int bit_arrayx[25];// For storing the data bit. bit_arrayx[0] = data bit 1 (LSB), bit_arrayx[23] = data bit 24 (MSB).
+unsigned long time_nowx;// For storing the time when the clock signal is changed from HIGH to LOW (falling edge trigger of data output).
+int CLOCK_PINx = 7;
+int DATA_PINx = 6;
+int bit_arrayy[25];// For storing the data bit. bit_arrayx[0] = data bit 1 (LSB), bit_arrayx[23] = data bit 24 (MSB).
+unsigned long time_nowy;// For storing the time when the clock signal is changed from HIGH to LOW (falling edge trigger of data output).
+int CLOCK_PINy = 2;
+int DATA_PINy = 4;
+void setup(){
+Serial.begin(9600);
+Serial.println("Ready");
+pinMode(CLOCK_PINx, INPUT);
+pinMode(DATA_PINx, INPUT);
+pinMode(CLOCK_PINy, INPUT);
+pinMode(DATA_PINy, INPUT);
+}
+void loop(){
+while (digitalRead(CLOCK_PINx)==LOW) {}// If clock is LOW wait until it turns to HIGH
+time_nowx = micros();
+while (digitalRead(CLOCK_PINx)==HIGH) {}// Wait for the end of the HIGH pulse
+if ((micros() - time_nowx) > 500) {// If the HIGH pulse was longer than 500 micros we are at the start of a new bit sequence
+decode();//decode the bit sequence
+}
+while (digitalRead(CLOCK_PINy)==LOW) {}// If clock is LOW wait until it turns to HIGH
+time_nowy = micros();
+while (digitalRead(CLOCK_PINy) == HIGH) {}// Wait for the end of the HIGH pulse
+if ((micros() - time_nowy) > 500) {// If the HIGH pulse was longer than 500 micros we are at the start of a new bit sequence
+decodey();//decode the bit sequence
+}
+}
+void decode(){
+int sign = 1;
+int i = 0;
+float value = 0.0;
+float result = 0.0;
+bit_arrayx[i] = digitalRead(DATA_PINx);// Store the 1st bit (start bit) which is always 1.
+while (digitalRead(CLOCK_PINx) == HIGH) {};
+for (i = 1; i <= 24; i++) {
+while (digitalRead(CLOCK_PINx) == LOW) { }// Wait until clock returns to HIGH
+bit_arrayx[i] = digitalRead(DATA_PINx);
+while (digitalRead(CLOCK_PINx) == HIGH) {}// Wait until clock returns to LOW
+}
+//for (i = 0; i <= 24; i++) {// Show the content of the bit array. This is for verification only.
+//Serial.print(bit_arrayx[i]);
+//Serial.print(" ");
+//}
+//Serial.println();                                                   
+for (i = 1; i <= 20; i++) {// Turning the value in the bit array from binary to decimal.
+value = value + (pow(2, i-1) * bit_arrayx[i]);
+}
+if (bit_arrayx[21] == 1) sign = -1;// Bit 21 is the sign bit. 0 -> +, 1 => -
+//if (bit_arrayx[24] == 1) {// Bit 24 tells the measureing unit (1 -> in, 0 -> mm)
+//result = (value*sign) / 2000.00;
+//Serial.print(result,3);// Print result with 3 decimals
+//Serial.println(" in");
+//} else {
+result = (value*sign);
+result = (result/25.4);
+//Serial.print(result,2);// Print result with 2 decimals
+//Serial.println(" in");
+
+  Serial.print("X");
+  Serial.print(result);
+  Serial.print(";"); 
+//}
+//delay(10);
+}
+
+void decodey(){
+int signy = 1;
+int iy = 0;
+float valuey = 0.0;
+float resulty = 0.0;
+bit_arrayy[iy] = digitalRead(DATA_PINy);// Store the 1st bit (start bit) which is always 1.
+while (digitalRead(CLOCK_PINy) == HIGH) {};
+for (iy = 1; iy <= 24; iy++) {
+while (digitalRead(CLOCK_PINy) == LOW) { }// Wait until clock returns to HIGH
+bit_arrayy[iy] = digitalRead(DATA_PINy);
+while (digitalRead(CLOCK_PINy) == HIGH) {}// Wait until clock returns to LOW
+}
+//for (iy = 0; iy <= 24; iy++) {// Show the content of the bit array. This is for verification only.
+//Serial.print(bit_arrayx[iy]);
+//Serial.print(" ");
+//}
+//Serial.println();
+for (iy = 1; iy <= 20; iy++) {// Turning the value in the bit array from binary to decimal.
+valuey = valuey + (pow(2, iy-1) * bit_arrayy[iy]);
+}
+if (bit_arrayy[21] == 1) signy = -1;// Bit 21 is the sign bit. 0 -> +, 1 => -
+//if (bit_arrayy[24] == 1) {// Bit 24 tells the measureing unit (1 -> in, 0 -> mm)
+//resulty = (valuey*signy) / 2000.00;
+//Serial.print(resulty,3);// Print result with 3 decimals
+//Serial.println(" in");
+//} else {
+resulty = (valuey*signy);
+resulty = (resulty/25.4);
+//Serial.print(resulty,2);// Print result with 2 decimals
+//Serial.println(" in");
+
+  Serial.print("Y");
+  Serial.print(resulty);
+  Serial.print(";"); 
+//}
+//delay(10);
+}
